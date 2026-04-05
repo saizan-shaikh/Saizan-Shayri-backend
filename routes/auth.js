@@ -7,52 +7,75 @@ const { protect } = require('../middleware/authMiddleware');
 // @desc Register new user
 // @route POST /api/auth/register
 router.post('/register', async (req, res) => {
-  const { username, email, password } = req.body;
+  try {
+    const { username, email, password } = req.body;
 
-  const userExists = await User.findOne({ 
-    $or: [{ email }, { username }] 
-  });
+    // Basic validation
+    if (!username || !email || !password) {
+      return res.status(400).json({ message: 'Please provide all required fields' });
+    }
 
-  if (userExists) {
-    return res.status(400).json({ message: 'User already exists' });
-  }
-
-  const user = await User.create({
-    username,
-    email,
-    password,
-  });
-
-  if (user) {
-    res.status(201).json({
-      _id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id, user.role),
+    const userExists = await User.findOne({ 
+      $or: [{ email }, { username }] 
     });
-  } else {
-    res.status(400).json({ message: 'Invalid user data' });
+
+    if (userExists) {
+      const field = userExists.email === email ? 'Email' : 'Username';
+      return res.status(400).json({ message: `${field} already exists` });
+    }
+
+    // Set role to admin if it's the special email
+    const role = (email.toLowerCase() === 'saizan@gmail.com') ? 'admin' : 'user';
+
+    const user = await User.create({
+      username,
+      email,
+      password,
+      role
+    });
+
+    if (user) {
+      res.status(201).json({
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: user.role,
+        token: generateToken(user._id, user.role),
+      });
+    } else {
+      res.status(400).json({ message: 'Failed to create user' });
+    }
+  } catch (error) {
+    console.error('Registration Error:', error.message);
+    res.status(500).json({ message: 'Database error. Please try again later.' });
   }
 });
 
 // @desc Auth user & get token
 // @route POST /api/auth/login
 router.post('/login', async (req, res) => {
-  const { email, password } = req.body;
+  try {
+    const { email, password } = req.body;
 
-  const user = await User.findOne({ email });
+    const user = await User.findOne({ email });
 
-  if (user && (await user.matchPassword(password))) {
-    res.json({
-      _id: user._id,
-      username: user.username,
-      email: user.email,
-      role: user.role,
-      token: generateToken(user._id, user.role),
-    });
-  } else {
-    res.status(401).json({ message: 'Invalid email or password' });
+    if (user && (await user.matchPassword(password))) {
+      // Force admin role if it's the special email
+      const role = (email.toLowerCase() === 'saizan@gmail.com') ? 'admin' : user.role;
+
+      res.json({
+        _id: user._id,
+        username: user.username,
+        email: user.email,
+        role: role,
+        token: generateToken(user._id, role),
+      });
+    } else {
+      res.status(401).json({ message: 'Invalid email or password' });
+    }
+  } catch (error) {
+    console.error('Login Error:', error.message);
+    res.status(500).json({ message: 'Database error. Please try again later.' });
   }
 });
 

@@ -1,4 +1,8 @@
+const express = require('express');
+const router = express.Router();
+
 const { protect, isAdmin } = require('../middleware/authMiddleware');
+const Shayri = require('../models/Shayri');
 
 router.get('/seed-data', protect, isAdmin, async (req, res) => {
   try {
