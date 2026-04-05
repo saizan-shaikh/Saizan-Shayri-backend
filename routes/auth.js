@@ -79,19 +79,22 @@ router.post('/login', async (req, res) => {
   }
 });
 
-// @desc Get user profile
-// @route GET /api/auth/profile
-router.get('/profile', protect, async (req, res) => {
-  const user = await User.findById(req.user._id);
+// @desc Delete user account
+// @route DELETE /api/auth/delete
+router.delete('/delete', protect, async (req, res) => {
+  try {
+    const user = await User.findById(req.user._id);
 
-  if (user) {
-    res.json({
-      username: user.username,
-      email: user.email,
-      role: user.role,
-    });
-  } else {
-    res.status(404).json({ message: 'User not found' });
+    if (user) {
+      // Admins should be protected from deletion if desired, but following user requirement to delete.
+      await User.deleteOne({ _id: user._id });
+      res.json({ message: 'User deleted and account permanently removed' });
+    } else {
+      res.status(404).json({ message: 'User not found' });
+    }
+  } catch (error) {
+    console.error('Account Deletion Error:', error.message);
+    res.status(500).json({ message: 'Server error. Failed to delete account.' });
   }
 });
 
