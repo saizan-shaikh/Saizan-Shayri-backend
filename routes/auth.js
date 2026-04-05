@@ -98,4 +98,20 @@ router.delete('/delete', protect, async (req, res) => {
   }
 });
 
+// @desc Get user profile
+// @route GET /api/auth/profile
+router.get('/profile', protect, async (req, res) => {
+  const user = await User.findById(req.user._id);
+
+  if (user) {
+    res.json({
+      username: user.username,
+      email: user.email,
+      role: user.role,
+    });
+  } else {
+    res.status(404).json({ message: 'User not found' });
+  }
+});
+
 module.exports = router;
