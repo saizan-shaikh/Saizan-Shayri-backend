@@ -1,8 +1,6 @@
-const express = require('express');
-const router = express.Router();
-const Shayri = require('../models/Shayri');
+const { protect, isAdmin } = require('../middleware/authMiddleware');
 
-router.get('/seed-data', async (req, res) => {
+router.get('/seed-data', protect, isAdmin, async (req, res) => {
   try {
     const shayris = [
   // Mirza Ghalib (30)
@@ -141,18 +139,88 @@ router.get('/poet/:name', async (req, res) => {
     });
   }
 
-  res.json({ shayris, page, pages: Math.ceil(count / pageSize), poet: poetName });
+  res.json({ shayris, page, pages: Math.ceil(count / pageSize), count, poet: poetName });
 });
 
 // @desc Get Single Shayri
 // @route GET /api/shayri/:id
 router.get('/:id', async (req, res) => {
-  const shayri = await Shayri.findById(req.params.id);
+  try {
+    const shayri = await Shayri.findById(req.params.id);
+    if (shayri) {
+      res.json(shayri);
+    } else {
+      res.status(404).json({ message: 'Shayri not found' });
+    }
+  } catch (error) {
+    console.error('Error fetching shayri by poet:', error.message);
+    res.status(500).json({ success: false, message: 'Server Error' });
+  }
+});
 
-  if (shayri) {
-    res.json(shayri);
-  } else {
-    res.status(404).json({ message: 'Shayri not found' });
+// @desc Increment Shayri views
+// @route PUT /api/shayri/:id/view
+router.put('/:id/view', async (req, res) => {
+  try {
+    const shayri = await Shayri.findByIdAndUpdate(
+      req.params.id,
+      { $inc: { views: 1 } },
+      { new: true }
+    );
+    if (!shayri) return res.status(404).json({ message: 'Shayri not found' });
+    res.json({ success: true, views: shayri.views });
+  } catch (err) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @desc Get Trending Shayri (Most Viewed)
+// @route GET /api/shayri/trending
+router.get('/trending', async (req, res) => {
+  try {
+    const shayris = await Shayri.find().sort({ views: -1 }).limit(10);
+    res.json(shayris);
+  } catch (err) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @desc Get Popular Shayri (Most Liked)
+// @route GET /api/shayri/popular
+router.get('/popular', async (req, res) => {
+  try {
+    const shayris = await Shayri.find().sort({ likes: -1 }).limit(10);
+    res.json(shayris);
+  } catch (err) {
+    res.status(500).json({ message: 'Server Error' });
+  }
+});
+
+// @desc Get Admin Stats (Admin Only)
+// @route GET /api/shayri/admin/stats
+router.get('/admin/stats', protect, isAdmin, async (req, res) => {
+  try {
+    const totalShayri = await Shayri.countDocuments();
+    const stats = await Shayri.aggregate([
+      {
+        $group: {
+          _id: null,
+          totalViews: { $sum: '$views' },
+          totalLikes: { $sum: '$likes' }
+        }
+      }
+    ]);
+    
+    const topPerforming = await Shayri.find().sort({ views: -1 }).limit(5);
+
+    res.json({
+      totalShayri,
+      totalViews: stats[0]?.totalViews || 0,
+      totalLikes: stats[0]?.totalLikes || 0,
+      topPerforming
+    });
+  } catch (err) {
+    res.status(500).json({ message: 'Server Error' });
   }
 });
 

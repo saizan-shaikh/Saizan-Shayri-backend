@@ -18,6 +18,14 @@ const shayriSchema = new mongoose.Schema({
     required: true,
     default: 'roman',
   },
+  views: {
+    type: Number,
+    default: 0,
+  },
+  likes: {
+    type: Number,
+    default: 0,
+  },
 }, { timestamps: true });
 
 module.exports = mongoose.model('Shayri', shayriSchema);

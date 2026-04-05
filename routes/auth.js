@@ -28,7 +28,8 @@ router.post('/register', async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
-      token: generateToken(user._id),
+      role: user.role,
+      token: generateToken(user._id, user.role),
     });
   } else {
     res.status(400).json({ message: 'Invalid user data' });
@@ -47,7 +48,8 @@ router.post('/login', async (req, res) => {
       _id: user._id,
       username: user.username,
       email: user.email,
-      token: generateToken(user._id),
+      role: user.role,
+      token: generateToken(user._id, user.role),
     });
   } else {
     res.status(401).json({ message: 'Invalid email or password' });
@@ -61,9 +63,9 @@ router.get('/profile', protect, async (req, res) => {
 
   if (user) {
     res.json({
-      _id: user._id,
       username: user.username,
       email: user.email,
+      role: user.role,
     });
   } else {
     res.status(404).json({ message: 'User not found' });

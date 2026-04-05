@@ -18,6 +18,9 @@ router.post('/add', protect, async (req, res) => {
   user.favorites.push(shayriId);
   await user.save();
 
+  // Increment likes on Shayri
+  await Shayri.findByIdAndUpdate(shayriId, { $inc: { likes: 1 } });
+
   res.status(201).json({ message: 'Added to favorites' });
 });
 
@@ -30,6 +33,9 @@ router.delete('/remove/:id', protect, async (req, res) => {
     (fav) => fav.toString() !== req.params.id
   );
   await user.save();
+
+  // Decrement likes on Shayri
+  await Shayri.findByIdAndUpdate(req.params.id, { $inc: { likes: -1 } });
 
   res.json({ message: 'Removed from favorites' });
 });
