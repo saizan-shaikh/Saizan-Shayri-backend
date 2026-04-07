@@ -82,7 +82,7 @@ router.get('/seed-data', protect, isAdmin, async (req, res) => {
 // @desc Get Shayri by Poet (with pagination)
 // @route GET /api/shayri/poet/:name
 router.get('/poet/:name', async (req, res) => {
-  const pageSize = 30;
+  const pageSize = 4;
   const page = Number(req.query.pageNumber) || 1;
   const poetName = (req.params.name || '').trim();
 
@@ -93,6 +93,7 @@ router.get('/poet/:name', async (req, res) => {
 
   const count = await Shayri.countDocuments(query);
   let shayris = await Shayri.find(query)
+    .sort({ createdAt: 1 })
     .limit(pageSize)
     .skip(pageSize * (page - 1));
 
@@ -131,7 +132,7 @@ router.get('/poet/:name', async (req, res) => {
       { _id: "f30", text: "Main khud se hi haar gaya hoon, Aur ab jeetne ki himmat nahi.", poet: "Jaun Elia", category: "philosophy" }
     ];
 
-    const pageSize = 30;
+    const pageSize = 4;
     const fallbackCount = jaunFallback.length;
     const startIndex = (page - 1) * pageSize;
     const paginatedFallback = jaunFallback.slice(startIndex, startIndex + pageSize);
