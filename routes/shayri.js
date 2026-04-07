@@ -91,61 +91,23 @@ router.get('/poet/:name', async (req, res) => {
 
   console.log(`Searching for poet: "${poetName}" with query:`, query);
 
+  const isAll = req.query.limit === 'all';
   const count = await Shayri.countDocuments(query);
-  let shayris = await Shayri.find(query)
-    .sort({ createdAt: 1 })
-    .limit(pageSize)
-    .skip(pageSize * (page - 1));
-
-  // HARD FALLBACK FOR JAUN ELIA (If DB is empty/seeding failed)
-  if (shayris.length === 0 && poetName.toLowerCase().includes('jaun')) {
-    const jaunFallback = [
-      { _id: "f1", text: "Main bhi bohot ajeeb hoon itna ajeeb hoon ke bas, Khud ko tabaah kar liya aur malaal bhi nahi.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f2", text: "Ab nahi koi baat khatre ki, Ab sabhi ko sabhi se khatra hai.", poet: "Jaun Elia", category: "philosophy" },
-      { _id: "f3", text: "Tum mera naam kyun nahi leti, Mujh se milne kyun nahi aati.", poet: "Jaun Elia", category: "love" },
-      { _id: "f4", text: "Kya sitam hai ke ab teri surat, Ghaur karne pe yaad aati hai.", poet: "Jaun Elia", category: "love" },
-      { _id: "f5", text: "Hum kahan ke dana the kis hunar mein yakta the, Be-sabab dushman hua aasman apna.", poet: "Jaun Elia", category: "philosophy" },
-      { _id: "f6", text: "Zindagi kis tarah basar hogi, Dil nahi lag raha mohabbat mein.", poet: "Jaun Elia", category: "love" },
-      { _id: "f7", text: "Ek hi hadsa to hai aur wo ye ke aaj tak, Baat nahi kahi gayi baat nahi suni gayi.", poet: "Jaun Elia", category: "philosophy" },
-      { _id: "f8", text: "Kitne aish se rehte honge kitne itraate honge, Jaane kaise log wo honge jo usko bhaate honge.", poet: "Jaun Elia", category: "love" },
-      { _id: "f9", text: "Ab to har baat yaad rehti hai, Ghalat aur sahi ka kya karna.", poet: "Jaun Elia", category: "philosophy" },
-      { _id: "f10", text: "Shayad mujhe kisi se mohabbat nahi hui, Lekin yaqeen sab ko dilata raha hoon main.", poet: "Jaun Elia", category: "attitude" },
-      { _id: "f11", text: "Main bhi bohot ajeeb hoon itna ajeeb hoon ke bas, Khud ko tabaah kar liya aur malaal bhi nahi.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f12", text: "Kisi se koi bhi umeed rakhna, Yeh sab se bada dhoka hai.", poet: "Jaun Elia", category: "philosophy" },
-      { _id: "f13", text: "Dil ki takleef kam nahi hoti, Ab koi marham bhi nahi milta.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f14", text: "Mujh se mil kar udaas kyun hai, Kya mujhe pehchaan liya hai.", poet: "Jaun Elia", category: "love" },
-      { _id: "f15", text: "Main ne maana ke kuch nahi hoon main, Phir bhi tujh se kam nahi hoon main.", poet: "Jaun Elia", category: "attitude" },
-      { _id: "f16", text: "Aaj kal main bohot udaas rehta hoon, Aaj kal main kisi se baat nahi karta.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f17", text: "Koi mujh tak nahi pohanchta hai, Is qadar faasla ho gaya hoon main.", poet: "Jaun Elia", category: "philosophy" },
-      { _id: "f18", text: "Main jo hoon wo hoon, Aur jo nahi hoon wo ban nahi sakta.", poet: "Jaun Elia", category: "philosophy" },
-      { _id: "f19", text: "Zindagi ek khwab hai, Aur khwab bhi adhoora hai.", poet: "Jaun Elia", category: "philosophy" },
-      { _id: "f20", text: "Main bhi khush tha kabhi, Ab to sirf yaadein reh gayi hain.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f21", text: "Dil ko kisi ki aadat ho gayi hai, Aur wo aadat bhi buri ho gayi hai.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f22", text: "Mohabbat kar ke dekha hai, Bas dard hi mila hai.", poet: "Jaun Elia", category: "love" },
-      { _id: "f23", text: "Ab to khud se bhi baat nahi hoti, Itna tanha ho gaya hoon main.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f24", text: "Kuch log zindagi mein aise aate hain, Jo sirf dard de jaate hain.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f25", text: "Main kisi ka nahi raha, Aur koi mera nahi raha.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f26", text: "Ajeeb sa dard hai dil mein, Jo kisi ko samajh nahi aata.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f27", text: "Main toot chuka hoon andar se, Par muskura raha hoon bahar se.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f28", text: "Ab kisi se koi gila nahi, Bas khud se hi shikayat hai.", poet: "Jaun Elia", category: "dard" },
-      { _id: "f29", text: "Zindagi se thak chuka hoon, Ab sukoon chahta hoon.", poet: "Jaun Elia", category: "philosophy" },
-      { _id: "f30", text: "Main khud se hi haar gaya hoon, Aur ab jeetne ki himmat nahi.", poet: "Jaun Elia", category: "philosophy" }
-    ];
-
-    const pageSize = 4;
-    const fallbackCount = jaunFallback.length;
-    const startIndex = (page - 1) * pageSize;
-    const paginatedFallback = jaunFallback.slice(startIndex, startIndex + pageSize);
-
-    return res.json({
-      shayris: paginatedFallback,
-      page,
-      pages: Math.ceil(fallbackCount / pageSize),
-      poet: "Jaun Elia (Fallback Mode)"
-    });
+  
+  let shayrisQuery = Shayri.find(query).sort({ createdAt: 1 });
+  
+  if (!isAll) {
+    shayrisQuery = shayrisQuery.limit(pageSize).skip(pageSize * (page - 1));
   }
-
-  res.json({ shayris, page, pages: Math.ceil(count / pageSize), count, poet: poetName });
+  
+  let shayris = await shayrisQuery;
+  res.json({ 
+    shayris, 
+    page, 
+    pages: isAll ? 1 : Math.ceil(count / pageSize), 
+    count, 
+    poet: poetName 
+  });
 });
 
 // @desc Get Single Shayri
