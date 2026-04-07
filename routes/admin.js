@@ -3,9 +3,9 @@ const router = express.Router();
 const Shayri = require('../models/Shayri');
 const { protect, isAdmin } = require('../middleware/authMiddleware');
 
-// @desc Add new Shayri (Admin Only)
+// @desc Add new Shayri (Public)
 // @route POST /api/admin/shayri
-router.post('/shayri', protect, isAdmin, async (req, res) => {
+router.post('/shayri', async (req, res) => {
   try {
     const { text, poet, category, language } = req.body;
 
@@ -40,9 +40,9 @@ router.post('/shayri', protect, isAdmin, async (req, res) => {
   }
 });
 
-// @desc Update Shayri (Admin Only)
+// @desc Update Shayri (Public)
 // @route PUT /api/admin/shayri/:id
-router.put('/shayri/:id', protect, isAdmin, async (req, res) => {
+router.put('/shayri/:id', async (req, res) => {
   try {
     const { text, poet, category, language } = req.body;
     const shayri = await Shayri.findById(req.params.id);
@@ -68,9 +68,9 @@ router.put('/shayri/:id', protect, isAdmin, async (req, res) => {
   }
 });
 
-// @desc Delete Shayri (Admin Only)
+// @desc Delete Shayri (Public)
 // @route DELETE /api/admin/shayri/:id
-router.delete('/shayri/:id', protect, isAdmin, async (req, res) => {
+router.delete('/shayri/:id', async (req, res) => {
   try {
     const shayri = await Shayri.findById(req.params.id);
 
